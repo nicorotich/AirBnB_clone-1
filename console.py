@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 """ Console Module """
 import cmd
+import re
 import sys
 from models.base_model import BaseModel
 from models.__init__ import storage
@@ -118,13 +119,35 @@ class HBNBCommand(cmd.Cmd):
         if not args:
             print("** class name missing **")
             return
-        elif args not in HBNBCommand.classes:
+        params = args.split(' ')
+        if params[0] not in HBNBCommand.classes:
             print("** class doesn't exist **")
             return
-        new_instance = HBNBCommand.classes[args]()
-        storage.save()
-        print(new_instance.id)
-        storage.save()
+
+        key_pairs = {}
+        if len(params) >1:
+            cls_params = params[1:]
+            for param in cls_params:
+                key, value = param.split("=")
+                """ String regex for the value string """
+                str_regex = r'\"\w*\"'
+                """ FLOAT regex for the value string """
+                float_regex = r'^[0-9]*\.[0-9]$'
+                """ INTEGER regex for the value string """
+                integer_regex = r'^[0-9]*$'
+                if re.match(str_regex, value):
+                    key_pairs[key] = re.sub(r'_', ' ', value)[1:-1]
+                elif re.match(float_regex, value):
+                    key_pairs[key] = float(value)
+                elif re.match(integer_regex, value):
+                    key_pairs[key] = int(value)
+                else:
+                    pass
+                key_pairs['__class__'] = params[0]
+                new_instace = HBNBCommand.classes[params[0]](**key_pairs)
+                storage.save()
+                print(new_instance.id)
+                storage.save()
 
     def help_create(self):
         """ Help information for the create method """
